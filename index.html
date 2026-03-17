@@ -2,48 +2,58 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Falling... Sort Of</title>
+<title>Definitely Playable</title>
 <style>
   body {
-    background: #111;
-    color: white;
+    background: hotpink; /* 💖 CHAOS */
+    color: black;
     text-align: center;
     font-family: Arial;
   }
 
   canvas {
-    background: #000;
+    background: black;
     margin-top: 20px;
-    border: 2px solid #444;
+    border: 3px solid white;
+  }
+
+  button {
+    padding: 10px 20px;
+    font-size: 18px;
+    margin-top: 10px;
+    cursor: pointer;
   }
 </style>
 </head>
 <body>
 
-<h1>🧱 Just Stack Them...</h1>
-<p>Use arrow keys. It should be easy.</p>
+<h1>🧱 Just Press Play...</h1>
+<p>This should work perfectly.</p>
 
+<button id="playBtn">▶ Play</button>
+
+<br>
 <canvas id="game" width="300" height="500"></canvas>
 
 <script>
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
+const playBtn = document.getElementById("playBtn");
 
 const COLS = 10;
 const ROWS = 20;
 const SIZE = 25;
 
-let piece = createPiece();
-let velocity = { x: 0, y: 2 };
+let piece;
+let running = false;
 
-// Colors
 const colors = ["cyan","yellow","purple","lime","red","blue","orange"];
 
 function createPiece() {
   return {
     x: 4,
     y: 0,
-    shape: [[1,1],[1,1]], // simple square
+    shape: [[1,1],[1,1]],
     color: colors[Math.floor(Math.random()*colors.length)],
     vx: (Math.random() - 0.5) * 2,
     vy: 2
@@ -53,6 +63,8 @@ function createPiece() {
 // Draw
 function draw() {
   ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  if (!piece) return;
 
   ctx.fillStyle = piece.color;
 
@@ -70,71 +82,70 @@ function draw() {
   });
 }
 
-// Update (THIS is where chaos happens)
+// Update
 function update() {
+  if (!piece) return;
+
   piece.x += piece.vx;
   piece.y += piece.vy;
 
-  // Gravity keeps increasing
-  piece.vy += 0.15;
+  piece.vy += 0.2; // gravity
 
-  // 😈 Bounce off walls
+  // Bounce walls
   if (piece.x < 0 || piece.x > COLS - 2) {
     piece.vx *= -1;
   }
 
-  // 😈 Bounce off floor
+  // Bounce floor
   if (piece.y > ROWS - 2) {
     piece.y = ROWS - 2;
     piece.vy *= -0.7;
 
-    // Random horizontal shove
     piece.vx += (Math.random() - 0.5) * 2;
   }
 
-  // 😈 Random drift
-  if (Math.random() < 0.02) {
+  // Random drift
+  if (Math.random() < 0.03) {
     piece.vx += (Math.random() - 0.5) * 1.5;
   }
 
-  // 😈 Random rotation glitch (visual chaos)
-  if (Math.random() < 0.01) {
+  // Random glitch
+  if (Math.random() < 0.02) {
     piece.shape.reverse();
   }
 
-  // If it “settles”… just spawn another (no stacking!)
+  // Respawn piece
   if (Math.abs(piece.vy) < 0.5 && piece.y > ROWS - 3) {
     piece = createPiece();
   }
 }
 
-// 😈 Bad controls
+// Controls (still terrible 😈)
 document.addEventListener("keydown", e => {
-  if (e.key === "ArrowLeft") {
-    piece.vx -= 1.5; // too strong
-  }
-  if (e.key === "ArrowRight") {
-    piece.vx += 1.5;
-  }
-  if (e.key === "ArrowDown") {
-    piece.vy += 2; // makes it worse
-  }
+  if (!running || !piece) return;
+
+  if (e.key === "ArrowLeft") piece.vx -= 1.5;
+  if (e.key === "ArrowRight") piece.vx += 1.5;
+  if (e.key === "ArrowDown") piece.vy += 2;
   if (e.key === "ArrowUp") {
-    // random rotation instead of real
-    if (Math.random() < 0.5) {
-      piece.shape.reverse();
-    }
+    if (Math.random() < 0.5) piece.shape.reverse();
   }
 });
 
 // Game loop
 function loop() {
+  if (!running) return;
   update();
   draw();
   requestAnimationFrame(loop);
 }
 
-loop();
+// ▶ Start game
+playBtn.addEventListener("click", () => {
+  piece = createPiece();
+  running = true;
+  loop();
+});
 </script>
 
 </body>
