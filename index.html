@@ -16,10 +16,7 @@
     align-items: center;
   }
 
-  h1 {
-    margin-top: 20px;
-    font-size: 32px;
-  }
+  h1 { margin-top: 20px; font-size: 32px; }
 
   #topbar {
     width: 100%;
@@ -39,11 +36,7 @@
     cursor: pointer;
   }
 
-  #score {
-    font-size: 18px;
-    display: flex;
-    align-items: center;
-  }
+  #score { font-size: 18px; display: flex; align-items: center; }
 
   canvas {
     background: black;
@@ -65,29 +58,13 @@
     font-size: 14px;
   }
 
-  #leaderboard h2 {
-    margin-top: 0;
-    font-size: 16px;
-  }
-
-  /* mobile controls */
-  #controls {
-    display: none;
-    margin-top: 15px;
-    gap: 10px;
-  }
+  #controls { display: none; margin-top: 15px; gap: 10px; }
 
   .ctrl {
-    width: 60px;
-    height: 60px;
-    background: #111;
-    color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 10px;
-    font-size: 20px;
-    user-select: none;
+    width: 60px; height: 60px;
+    background: #111; color: white;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 10px; font-size: 20px;
   }
 
   @media (max-width: 600px) {
@@ -104,7 +81,7 @@
   <div id="score">Score: 0</div>
 </div>
 
-<canvas id="game" width="300" height="500"></canvas>
+<canvas id="game"></canvas>
 
 <div id="controls">
   <div class="ctrl" id="left">⬅️</div>
@@ -131,7 +108,11 @@ const COLS = 10;
 const ROWS = 20;
 const SIZE = 25;
 
-let board, piece, running = false, score = 0;
+canvas.width = COLS * SIZE;
+canvas.height = ROWS * SIZE;
+
+let board, piece, running=false, score=0;
+let pieceGlitched=false;
 
 const shapes = [
   [[1,1,1,1]],
@@ -143,29 +124,52 @@ const shapes = [
 
 const colors = ["cyan","yellow","purple","lime","red","blue","orange"];
 
-function createPiece() {
+function createPiece(){
+  pieceGlitched=false;
   return {
-    x: 3,
-    y: 0,
-    shape: shapes[Math.floor(Math.random()*shapes.length)],
-    color: colors[Math.floor(Math.random()*colors.length)]
+    x:3,y:0,
+    shape:shapes[Math.floor(Math.random()*shapes.length)],
+    color:colors[Math.floor(Math.random()*colors.length)]
   };
 }
 
-function draw() {
+function drawGrid(){
+  ctx.strokeStyle = "rgba(255,255,255,0.05)";
+  for(let x=0;x<COLS;x++){
+    for(let y=0;y<ROWS;y++){
+      ctx.strokeRect(x*SIZE,y*SIZE,SIZE,SIZE);
+    }
+  }
+}
+
+function draw(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
 
-  for (let y=0;y<ROWS;y++) {
-    for (let x=0;x<COLS;x++) {
-      if (board[y][x]) {
-        ctx.fillStyle = board[y][x];
+  drawGrid();
+
+  for(let y=0;y<ROWS;y++){
+    for(let x=0;x<COLS;x++){
+      if(board[y][x]){
+        ctx.fillStyle=board[y][x];
         ctx.fillRect(x*SIZE,y*SIZE,SIZE-2,SIZE-2);
       }
     }
   }
 
-  if (!piece) return;
+  // ghost piece
+  let ghostY = piece.y;
+  while(!collide(piece.x, ghostY+1, piece.shape)) ghostY++;
+
+  ctx.globalAlpha = 0.2;
   ctx.fillStyle = piece.color;
+  piece.shape.forEach((row,y)=>{
+    row.forEach((val,x)=>{
+      if(val) ctx.fillRect((piece.x+x)*SIZE,(ghostY+y)*SIZE,SIZE-2,SIZE-2);
+    });
+  });
+  ctx.globalAlpha = 1;
+
+  ctx.fillStyle=piece.color;
   piece.shape.forEach((row,y)=>{
     row.forEach((val,x)=>{
       if(val) ctx.fillRect((piece.x+x)*SIZE,(piece.y+y)*SIZE,SIZE-2,SIZE-2);
@@ -196,6 +200,18 @@ function update(time=0){
 
   const delta=time-lastTime;
 
+  // rigged shift
+  if(piece && !pieceGlitched){
+    const nearGround = piece.y > ROWS-6 || collide(piece.x,piece.y+2,piece.shape);
+    if(nearGround && Math.random()<0.33){
+      const dir=Math.random()<0.5?-1:1;
+      if(!collide(piece.x+dir,piece.y,piece.shape)){
+        piece.x+=dir;
+        pieceGlitched=true;
+      }
+    }
+  }
+
   if(delta>dropInterval){
     piece.y++;
 
@@ -203,8 +219,7 @@ function update(time=0){
       piece.y--;
       merge();
 
-      if(piece.y<2){ gameOver(); return; }
-
+      if(piece.y<2){gameOver();return;}
       piece=createPiece();
     }
 
@@ -221,21 +236,9 @@ function rotate(shape){
   return shape[0].map((_,i)=>shape.map(r=>r[i])).reverse();
 }
 
-// controls
-function move(dir){
-  piece.x+=dir;
-  if(collide(piece.x,piece.y,piece.shape)) piece.x-=dir;
-}
-
-function drop(){
-  piece.y++;
-  if(collide(piece.x,piece.y,piece.shape)) piece.y--;
-}
-
-function spin(){
-  const r=rotate(piece.shape);
-  if(!collide(piece.x,piece.y,r)) piece.shape=r;
-}
+function move(d){ piece.x+=d; if(collide(piece.x,piece.y,piece.shape)) piece.x-=d; }
+function drop(){ piece.y++; if(collide(piece.x,piece.y,piece.shape)) piece.y--; }
+function spin(){ let r=rotate(piece.shape); if(!collide(piece.x,piece.y,r)) piece.shape=r; }
 
 // keyboard
 
@@ -261,11 +264,7 @@ function gameOver(){
 }
 
 playBtn.addEventListener("click",()=>{
-  if(running){
-    running=false;
-    playBtn.textContent="▶ Play";
-    return;
-  }
+  if(running){ running=false; playBtn.textContent="▶ Play"; return; }
 
   board=Array.from({length:ROWS},()=>Array(COLS).fill(0));
   score=0;
@@ -279,3 +278,4 @@ playBtn.addEventListener("click",()=>{
 
 </body>
 </html>
+
