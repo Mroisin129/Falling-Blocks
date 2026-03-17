@@ -4,12 +4,11 @@
 <meta charset="UTF-8">
 <title>Totally Fair Game</title>
 
-<!-- 🌀 Silly font -->
 <link href="https://fonts.googleapis.com/css2?family=Comic+Neue:wght@700&family=Pacifico&display=swap" rel="stylesheet">
 
 <style>
   body {
-    background: hotpink;
+    background: white; /* 🤍 changed */
     color: black;
     text-align: center;
     font-family: 'Pacifico', cursive;
@@ -22,7 +21,7 @@
   canvas {
     background: black;
     margin-top: 20px;
-    border: 3px solid white;
+    border: 3px solid black;
   }
 
   button {
@@ -40,14 +39,10 @@
 
   #leaderboard {
     margin-top: 20px;
-    background: rgba(255,255,255,0.3);
+    background: rgba(0,0,0,0.1);
     display: inline-block;
     padding: 10px;
     border-radius: 10px;
-  }
-
-  #leaderboard h2 {
-    margin: 0;
   }
 </style>
 </head>
@@ -62,12 +57,11 @@
 
 <canvas id="game" width="300" height="500"></canvas>
 
-<!-- 🏆 Fake leaderboard -->
 <div id="leaderboard">
   <h2>🏆 Leaderboard</h2>
-  <div>1. Maeve H - 263,939</div>
-  <div>2. Bre G - 189,120</div>
-  <div>3. WID - 720,300</div>
+  <div>1. AAA - 999,999</div>
+  <div>2. ProGamer42 - 850,120</div>
+  <div>3. BlockMaster - 720,300</div>
   <div>4. You - ???</div>
 </div>
 
@@ -81,20 +75,28 @@ const COLS = 10;
 const ROWS = 20;
 const SIZE = 25;
 
+let board = Array.from({ length: ROWS }, () => Array(COLS).fill(0));
 let piece;
 let running = false;
 let score = 0;
 
+const shapes = [
+  [[1,1,1,1]],
+  [[1,1],[1,1]],
+  [[0,1,0],[1,1,1]],
+  [[1,0,0],[1,1,1]],
+  [[0,0,1],[1,1,1]]
+];
+
 const colors = ["cyan","yellow","purple","lime","red","blue","orange"];
 
 function createPiece() {
+  const shape = shapes[Math.floor(Math.random()*shapes.length)];
   return {
-    x: 4,
+    x: 3,
     y: 0,
-    shape: [[1,1],[1,1]],
-    color: colors[Math.floor(Math.random()*colors.length)],
-    vx: (Math.random() - 0.5) * 2,
-    vy: 2
+    shape,
+    color: colors[Math.floor(Math.random()*colors.length)]
   };
 }
 
@@ -102,10 +104,18 @@ function createPiece() {
 function draw() {
   ctx.clearRect(0,0,canvas.width,canvas.height);
 
+  for (let y = 0; y < ROWS; y++) {
+    for (let x = 0; x < COLS; x++) {
+      if (board[y][x]) {
+        ctx.fillStyle = board[y][x];
+        ctx.fillRect(x*SIZE, y*SIZE, SIZE-2, SIZE-2);
+      }
+    }
+  }
+
   if (!piece) return;
 
   ctx.fillStyle = piece.color;
-
   piece.shape.forEach((row, y) => {
     row.forEach((val, x) => {
       if (val) {
@@ -120,83 +130,127 @@ function draw() {
   });
 }
 
-// Update
-function update() {
-  if (!piece) return;
+// Collision
+function collide(px, py, shape) {
+  return shape.some((row, y) =>
+    row.some((val, x) => {
+      if (!val) return false;
+      let nx = px + x;
+      let ny = py + y;
+      return nx < 0 || nx >= COLS || ny >= ROWS || (ny >= 0 && board[ny][nx]);
+    })
+  );
+}
 
-  piece.x += piece.vx;
-  piece.y += piece.vy;
+// Merge
+function merge() {
+  piece.shape.forEach((row, y) => {
+    row.forEach((val, x) => {
+      if (val) {
+        board[piece.y + y][piece.x + x] = piece.color;
+      }
+    });
+  });
+}
 
-  piece.vy += 0.25;
-
-  // Score goes up no matter what 😈
-  score += Math.floor(Math.random() * 5);
-  scoreDisplay.textContent = "Score: " + score;
-
-  // Bounce walls
-  if (piece.x < 0 || piece.x > COLS - 2) {
-    piece.vx *= -1;
-  }
-
-  // Bounce floor
-  if (piece.y > ROWS - 2) {
-    piece.y = ROWS - 2;
-    piece.vy *= -0.7;
-    piece.vx += (Math.random() - 0.5) * 2;
-  }
-
-  // 😈 Random drift
-  if (Math.random() < 0.03) {
-    piece.vx += (Math.random() - 0.5) * 1.5;
-  }
-
-  // 😈 Random rotation glitch
-  if (Math.random() < 0.02) {
+// 😈 Subtle sabotage
+function sabotage() {
+  if (Math.random() < 0.5) {
+    piece.x += Math.random() < 0.5 ? -1 : 1;
+  } else {
     piece.shape.reverse();
   }
-
-  // ☠️ GAME OVER if near top
-  if (piece.y < 1 && Math.random() < 0.1) {
-    gameOver();
-  }
-
-  // Respawn piece
-  if (Math.abs(piece.vy) < 0.5 && piece.y > ROWS - 3) {
-    piece = createPiece();
-  }
 }
 
-function gameOver() {
-  running = false;
-  alert("GAME OVER\nScore: " + score + "\nSo close!");
+// Drop timing
+let lastTime = 0;
+let dropInterval = 800;
+
+function update(time = 0) {
+  if (!running) return;
+
+  const delta = time - lastTime;
+
+  if (delta > dropInterval) {
+    piece.y++;
+
+    if (collide(piece.x, piece.y, piece.shape)) {
+      piece.y--;
+
+      // 😈 sabotage right before locking
+      if (Math.random() < 0.7) {
+        sabotage();
+      }
+
+      if (!collide(piece.x, piece.y, piece.shape)) {
+        piece.y++;
+      }
+
+      piece.y--;
+      merge();
+
+      if (piece.y < 2) {
+        gameOver();
+        return;
+      }
+
+      piece = createPiece();
+    }
+
+    lastTime = time;
+    score += 10;
+    scoreDisplay.textContent = "Score: " + score;
+  }
+
+  draw();
+  requestAnimationFrame(update);
 }
 
-// Controls (still awful)
+// Rotate
+function rotate(shape) {
+  return shape[0].map((_, i) => shape.map(row => row[i])).reverse();
+}
+
+// Controls
 document.addEventListener("keydown", e => {
-  if (!running || !piece) return;
+  if (!running) return;
 
-  if (e.key === "ArrowLeft") piece.vx -= 1.5;
-  if (e.key === "ArrowRight") piece.vx += 1.5;
-  if (e.key === "ArrowDown") piece.vy += 2;
+  if (e.key === "ArrowLeft") {
+    piece.x--;
+    if (collide(piece.x, piece.y, piece.shape)) piece.x++;
+  }
+
+  if (e.key === "ArrowRight") {
+    piece.x++;
+    if (collide(piece.x, piece.y, piece.shape)) piece.x--;
+  }
+
+  if (e.key === "ArrowDown") {
+    piece.y++;
+    if (collide(piece.x, piece.y, piece.shape)) piece.y--;
+  }
+
   if (e.key === "ArrowUp") {
-    if (Math.random() < 0.5) piece.shape.reverse();
+    const rotated = rotate(piece.shape);
+    if (!collide(piece.x, piece.y, rotated)) {
+      piece.shape = rotated;
+    }
   }
 });
 
-// Loop
-function loop() {
-  if (!running) return;
-  update();
-  draw();
-  requestAnimationFrame(loop);
+function gameOver() {
+  running = false;
+  alert("Game Over\nScore: " + score + "\nYou almost had it.");
 }
 
 // Start
 playBtn.addEventListener("click", () => {
+  board = Array.from({ length: ROWS }, () => Array(COLS).fill(0));
   score = 0;
   piece = createPiece();
   running = true;
-  loop();
+  lastTime = 0;
+  update();
 });
 </script>
 
