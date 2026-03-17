@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Falling Bricks</title>
+<title>Falling Bricks 2.0</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Orbitron:wght@600&display=swap" rel="stylesheet">
 
@@ -65,10 +65,32 @@
   }
 
   .ctrl {
-    width: 60px; height: 60px;
-    background: #111; color: white;
-    display: flex; align-items: center; justify-content: center;
-    border-radius: 10px; font-size: 20px;
+    width: 70px;
+    height: 70px;
+    background: #111;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 14px;
+    box-shadow: 0 6px 14px rgba(0,0,0,0.25);
+    transition: transform 0.08s ease, background 0.08s ease;
+  }
+
+  .ctrl svg {
+    width: 28px;
+    height: 28px;
+    fill: white;
+  }
+
+  .ctrl:active {
+    transform: scale(0.88);
+    background: #333;
+  }
+
+  .ctrl:active {
+    transform: scale(0.9);
+    background: #333;
   }
 
   @media (max-width: 600px) {
@@ -78,7 +100,7 @@
 </head>
 <body>
 
-<h1>🧱 Just One More Line...</h1>
+<h1>🧱 Falling Bricks 2.0</h1>
 
 <div id="topbar">
   <button id="playBtn">▶ Play</button>
@@ -88,7 +110,23 @@
 <canvas id="game"></canvas>
 
 <div id="controls">
-  <div class="ctrl" id="left">⬅️</div>
+  <div class="ctrl" id="left">
+    <svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
+  </div>
+  <div class="ctrl" id="right">
+    <svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>
+  </div>
+  <div class="ctrl" id="down">
+    <svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
+  </div>
+  <div class="ctrl" id="rotate">
+    <svg viewBox="0 0 24 24"><path d="M12 6V3L8 7l4 4V8c2.76 0 5 2.24 5 5a5 5 0 11-9.9-1h-2.02A7 7 0 1012 6z"/></svg>
+  </div>
+</div>
+  <div class="ctrl" id="right">&#9654;</div>
+  <div class="ctrl" id="down">&#9660;</div>
+  <div class="ctrl" id="rotate">&#8635;</div>
+</div>
   <div class="ctrl" id="right">➡️</div>
   <div class="ctrl" id="down">⬇️</div>
   <div class="ctrl" id="rotate">⟳</div>
@@ -96,10 +134,9 @@
 
 <div id="leaderboard">
   <h2>🏆 Leaderboard</h2>
-  <div>1. AAA - 999,999</div>
-  <div>2. ProGamer42 - 850,120</div>
-  <div>3. BlockMaster - 720,300</div>
-  <div>4. You - ???</div>
+  <div>1. Maeve H - 999,999</div>
+  <div>2. Bre G - 850,120</div>
+  <div>3. KDN - 720,300</div>
 </div>
 
 <script>
@@ -262,10 +299,44 @@ document.addEventListener("keydown",e=>{
 
 // mobile buttons
 
-document.getElementById("left").onclick=()=>move(-1);
-document.getElementById("right").onclick=()=>move(1);
-document.getElementById("down").onclick=()=>drop();
-document.getElementById("rotate").onclick=()=>spin();
+// haptic feedback helper
+function vibrate() {
+  if (navigator.vibrate) navigator.vibrate(10);
+}
+
+// hold-to-move behavior
+let holdInterval;
+
+function startHold(action) {
+  action();
+  vibrate();
+  holdInterval = setInterval(() => {
+    action();
+  }, 120);
+}
+
+function stopHold() {
+  clearInterval(holdInterval);
+}
+
+const leftBtn = document.getElementById("left");
+const rightBtn = document.getElementById("right");
+const downBtn = document.getElementById("down");
+const rotateBtn = document.getElementById("rotate");
+
+[leftBtn, rightBtn, downBtn].forEach((btn, i) => {
+  const actions = [() => move(-1), () => move(1), () => drop()];
+
+  btn.addEventListener("touchstart", () => startHold(actions[i]));
+  btn.addEventListener("touchend", stopHold);
+  btn.addEventListener("mousedown", () => startHold(actions[i]));
+  btn.addEventListener("mouseup", stopHold);
+  btn.addEventListener("mouseleave", stopHold);
+});
+
+// rotate (single tap)
+rotateBtn.addEventListener("touchstart", () => { spin(); vibrate(); });
+rotateBtn.addEventListener("mousedown", () => spin());
 
 function gameOver(){
   running=false;
