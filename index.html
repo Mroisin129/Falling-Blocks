@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Falling Blocks</title>
+<title>Falling Bricks</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Orbitron:wght@600&display=swap" rel="stylesheet">
 
@@ -58,7 +58,11 @@
     font-size: 14px;
   }
 
-  #controls { display: none; margin-top: 15px; gap: 10px; }
+  #controls {
+    display: flex;
+    margin-top: 15px;
+    gap: 10px;
+  }
 
   .ctrl {
     width: 60px; height: 60px;
@@ -195,7 +199,13 @@ function merge(){
 
 let lastTime=0, dropInterval=600;
 
+function updateSpeed(){
+  // progressively faster, but capped
+  dropInterval = Math.max(120, 600 - score * 0.4);
+}
+
 function update(time=0){
+  updateSpeed();
   if(!running) return;
 
   const delta=time-lastTime;
@@ -278,4 +288,3 @@ playBtn.addEventListener("click",()=>{
 
 </body>
 </html>
-
