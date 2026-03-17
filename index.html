@@ -147,7 +147,8 @@ function createPiece() {
 function draw() {
   ctx.clearRect(0,0,canvas.width,canvas.height);
 // grid lines
-ctx.strokeStyle = "rgba(255,255,255,0.05)";
+ctx.strokeStyle = "rgba(255,255,255,0.15)";
+ctx.lineWidth = 0.8;;
 for (let x = 0; x <= COLS; x++) {
   ctx.beginPath();
   ctx.moveTo(x * SIZE, 0);
@@ -209,12 +210,16 @@ function merge(){
 }
 
 // 😈 rigged movement (1/3 pieces)
-function rigMove(){
-  if (!piece.shifted && Math.random() < 0.33) {
-    let dir = Math.random() < 0.5 ? -1 : 1;
-    if (!collide(piece.x+dir, piece.y, piece.shape)) {
-      piece.x += dir;
-      piece.shifted = true;
+ function rigMove(force = false){
+  if (!piece.shifted && (force || Math.random() < 0.33)) {
+    let dirs = [-1, 1].sort(() => Math.random() - 0.5);
+
+    for (let dir of dirs) {
+      if (!collide(piece.x + dir, piece.y, piece.shape)) {
+        piece.x += dir;
+        piece.shifted = true;
+        return;
+      }
     }
   }
 }
@@ -238,8 +243,13 @@ function update(time=0){
 
     if(collide(piece.x,piece.y,piece.shape)){
       piece.y--;
-
-      rigMove(); // before lock
+if (Math.random() < 0.15) {
+  const r = rotate(piece.shape);
+  if (!collide(piece.x, piece.y, r)) {
+    piece.shape = r;
+  }
+}
+    rigMove(true); // FORCE shift at bottom
 
       merge();
 
