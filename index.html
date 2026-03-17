@@ -46,6 +46,7 @@ body {
   border-radius: 12px;
   margin: 20px auto;
   display: block;
+  max-width: 100%;
 }
 
 /* Controls */
@@ -85,7 +86,7 @@ body {
 /* Mobile adjustments */
 @media (max-width: 500px) {
   #leaderboard {
-    position: static;     /* normal flow */
+    position: static;     
     margin: 10px auto 0 auto;
     max-width: 90%;
   }
@@ -93,6 +94,26 @@ body {
   .topbar {
     flex-direction: column;
     gap: 10px;
+  }
+
+  #game {
+    width: 90%;
+    height: auto;
+  }
+
+  #controls {
+    bottom: 10px;
+    gap: 8px;
+  }
+
+  .ctrl {
+    width: 50px;
+    height: 50px;
+  }
+
+  .ctrl svg {
+    width: 20px;
+    height: 20px;
   }
 }
 </style>
@@ -128,7 +149,19 @@ const ctxƒ = canvas.getContext("2d");
 
 const COLS = 10;
 const ROWS = 20;
-const SIZE = 28;
+
+// Responsive block size
+let SIZE = Math.floor(Math.min(window.innerWidth / COLS * 0.9, 28)); 
+canvas.width = COLS * SIZE;
+canvas.height = ROWS * SIZE;
+
+// Recompute SIZE on window resize
+window.addEventListener("resize", ()=>{
+  SIZE = Math.floor(Math.min(window.innerWidth / COLS * 0.9, 28));
+  canvas.width = COLS * SIZE;
+  canvas.height = ROWS * SIZE;
+  draw();
+});
 
 canvas.width = COLS * SIZE;
 canvas.height = ROWS * SIZE;
