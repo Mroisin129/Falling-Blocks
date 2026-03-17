@@ -2,13 +2,21 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Definitely Playable</title>
+<title>Totally Fair Game</title>
+
+<!-- 🌀 Silly font -->
+<link href="https://fonts.googleapis.com/css2?family=Comic+Neue:wght@700&family=Pacifico&display=swap" rel="stylesheet">
+
 <style>
   body {
-    background: hotpink; /* 💖 CHAOS */
+    background: hotpink;
     color: black;
     text-align: center;
-    font-family: Arial;
+    font-family: 'Pacifico', cursive;
+  }
+
+  h1 {
+    font-size: 40px;
   }
 
   canvas {
@@ -22,23 +30,52 @@
     font-size: 18px;
     margin-top: 10px;
     cursor: pointer;
+    font-family: 'Comic Neue', cursive;
+  }
+
+  #score {
+    font-size: 20px;
+    margin-top: 10px;
+  }
+
+  #leaderboard {
+    margin-top: 20px;
+    background: rgba(255,255,255,0.3);
+    display: inline-block;
+    padding: 10px;
+    border-radius: 10px;
+  }
+
+  #leaderboard h2 {
+    margin: 0;
   }
 </style>
 </head>
 <body>
 
-<h1>🧱 Just Press Play...</h1>
-<p>This should work perfectly.</p>
+<h1>🧱 Just One More Line...</h1>
+<p>This is definitely winnable.</p>
 
 <button id="playBtn">▶ Play</button>
 
-<br>
+<div id="score">Score: 0</div>
+
 <canvas id="game" width="300" height="500"></canvas>
+
+<!-- 🏆 Fake leaderboard -->
+<div id="leaderboard">
+  <h2>🏆 Leaderboard</h2>
+  <div>1. Maeve H - 263,939</div>
+  <div>2. Bre G - 189,120</div>
+  <div>3. WID - 720,300</div>
+  <div>4. You - ???</div>
+</div>
 
 <script>
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 const playBtn = document.getElementById("playBtn");
+const scoreDisplay = document.getElementById("score");
 
 const COLS = 10;
 const ROWS = 20;
@@ -46,6 +83,7 @@ const SIZE = 25;
 
 let piece;
 let running = false;
+let score = 0;
 
 const colors = ["cyan","yellow","purple","lime","red","blue","orange"];
 
@@ -89,7 +127,11 @@ function update() {
   piece.x += piece.vx;
   piece.y += piece.vy;
 
-  piece.vy += 0.2; // gravity
+  piece.vy += 0.25;
+
+  // Score goes up no matter what 😈
+  score += Math.floor(Math.random() * 5);
+  scoreDisplay.textContent = "Score: " + score;
 
   // Bounce walls
   if (piece.x < 0 || piece.x > COLS - 2) {
@@ -100,18 +142,22 @@ function update() {
   if (piece.y > ROWS - 2) {
     piece.y = ROWS - 2;
     piece.vy *= -0.7;
-
     piece.vx += (Math.random() - 0.5) * 2;
   }
 
-  // Random drift
+  // 😈 Random drift
   if (Math.random() < 0.03) {
     piece.vx += (Math.random() - 0.5) * 1.5;
   }
 
-  // Random glitch
+  // 😈 Random rotation glitch
   if (Math.random() < 0.02) {
     piece.shape.reverse();
+  }
+
+  // ☠️ GAME OVER if near top
+  if (piece.y < 1 && Math.random() < 0.1) {
+    gameOver();
   }
 
   // Respawn piece
@@ -120,7 +166,12 @@ function update() {
   }
 }
 
-// Controls (still terrible 😈)
+function gameOver() {
+  running = false;
+  alert("GAME OVER\nScore: " + score + "\nSo close!");
+}
+
+// Controls (still awful)
 document.addEventListener("keydown", e => {
   if (!running || !piece) return;
 
@@ -132,7 +183,7 @@ document.addEventListener("keydown", e => {
   }
 });
 
-// Game loop
+// Loop
 function loop() {
   if (!running) return;
   update();
@@ -140,8 +191,9 @@ function loop() {
   requestAnimationFrame(loop);
 }
 
-// ▶ Start game
+// Start
 playBtn.addEventListener("click", () => {
+  score = 0;
   piece = createPiece();
   running = true;
   loop();
