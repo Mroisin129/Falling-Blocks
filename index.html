@@ -4,24 +4,23 @@
 <meta charset="UTF-8">
 <title>Totally Fair Game</title>
 
-<link href="https://fonts.googleapis.com/css2?family=Comic+Neue:wght@700&family=Pacifico&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Comic+Neue:wght@700&family=Pacifico&family=Orbitron:wght@600&display=swap" rel="stylesheet">
 
 <style>
   body {
-    background: white; /* 🤍 changed */
+    background: white;
     color: black;
     text-align: center;
     font-family: 'Pacifico', cursive;
   }
 
-  h1 {
-    font-size: 40px;
-  }
+  h1 { font-size: 40px; }
 
   canvas {
     background: black;
     margin-top: 20px;
     border: 3px solid black;
+    touch-action: none;
   }
 
   button {
@@ -32,10 +31,7 @@
     font-family: 'Comic Neue', cursive;
   }
 
-  #score {
-    font-size: 20px;
-    margin-top: 10px;
-  }
+  #score { font-size: 20px; margin-top: 10px; }
 
   #leaderboard {
     margin-top: 20px;
@@ -43,6 +39,7 @@
     display: inline-block;
     padding: 10px;
     border-radius: 10px;
+    font-family: 'Orbitron', sans-serif; /* changed font */
   }
 </style>
 </head>
@@ -92,15 +89,22 @@ const colors = ["cyan","yellow","purple","lime","red","blue","orange"];
 
 function createPiece() {
   const shape = shapes[Math.floor(Math.random()*shapes.length)];
+
+  // 😈 slight bias toward awkward shapes as score increases
+  let index = Math.floor(Math.random()*shapes.length);
+  if (Math.random() < Math.min(0.4, score / 3000)) {
+    index = Math.floor(Math.random() * (shapes.length - 1)) + 1;
+  }
+
   return {
     x: 3,
     y: 0,
-    shape,
+    shape: shapes[index],
     color: colors[Math.floor(Math.random()*colors.length)]
   };
+};
 }
 
-// Draw
 function draw() {
   ctx.clearRect(0,0,canvas.width,canvas.height);
 
@@ -119,73 +123,98 @@ function draw() {
   piece.shape.forEach((row, y) => {
     row.forEach((val, x) => {
       if (val) {
-        ctx.fillRect(
-          (piece.x + x) * SIZE,
-          (piece.y + y) * SIZE,
-          SIZE-2,
-          SIZE-2
-        );
+        ctx.fillRect((piece.x + x) * SIZE,(piece.y + y) * SIZE,SIZE-2,SIZE-2);
       }
     });
   });
 }
 
-// Collision
 function collide(px, py, shape) {
   return shape.some((row, y) =>
     row.some((val, x) => {
       if (!val) return false;
       let nx = px + x;
       let ny = py + y;
+
+      // occasional phantom collision (feels like hitbox bug)
+      if (Math.random() < 0.015) return true;
+
       return nx < 0 || nx >= COLS || ny >= ROWS || (ny >= 0 && board[ny][nx]);
     })
   );
 }
 
-// Merge
 function merge() {
   piece.shape.forEach((row, y) => {
     row.forEach((val, x) => {
-      if (val) {
-        board[piece.y + y][piece.x + x] = piece.color;
-      }
+      if (val) board[piece.y + y][piece.x + x] = piece.color;
     });
   });
-}
 
-// 😈 Subtle sabotage
-function sabotage() {
-  if (Math.random() < 0.5) {
-    piece.x += Math.random() < 0.5 ? -1 : 1;
-  } else {
-    piece.shape.reverse();
+  // rare "micro gap" insertion (breaks perfect lines subtly)
+  if (Math.random() < 0.18) {
+    const y = ROWS - 1 - Math.floor(Math.random() * 5);
+    const x = Math.floor(Math.random() * COLS);
+    // clear a single cell in an otherwise filled row section
+    board[y][x] = 0;
+  }
+
+  // occasional stray block
+  if (Math.random() < 0.22) {
+    const randX = Math.floor(Math.random() * COLS);
+    const randY = ROWS - 1 - Math.floor(Math.random() * 4);
+    if (!board[randY][randX]) board[randY][randX] = "gray";
+  }
+}
   }
 }
 
-// Drop timing
+// adaptive unfair drift (gets worse as you do better)
+// adaptive unfair drift (feels like input slip)
+function drift() {
+  let difficulty = Math.min(0.3, 0.08 + score / 2500);
+  if (Math.random() < difficulty) {
+    const dir = Math.random() < 0.5 ? -1 : 1;
+    // tiny chance to "overshoot" by 2 (feels like lag)
+    const step = Math.random() < 0.12 ? 2 : 1;
+    if (!collide(piece.x + dir * step, piece.y, piece.shape)) {
+      piece.x += dir * step;
+    }
+  }
+}
+  }
+}
+  }
+}
+
 let lastTime = 0;
-let dropInterval = 800;
+let dropInterval = 550;
+
+// speed increases over time (quietly brutal)
+function updateSpeed() {
+  dropInterval = Math.max(180, 550 - score * 0.5);
+}
+ // faster
 
 function update(time = 0) {
+  updateSpeed();
+
+  // very slight vertical jitter (feels like frame stutter)
+  if (Math.random() < 0.05 && piece && !collide(piece.x, piece.y + 1, piece.shape)) {
+    piece.y++;
+  }
+  updateSpeed();
   if (!running) return;
 
   const delta = time - lastTime;
+
+  // occasional drift while falling
+  drift();
 
   if (delta > dropInterval) {
     piece.y++;
 
     if (collide(piece.x, piece.y, piece.shape)) {
-      piece.y--;
-
-      // 😈 sabotage right before locking
-      if (Math.random() < 0.7) {
-        sabotage();
-      }
-
-      if (!collide(piece.x, piece.y, piece.shape)) {
-        piece.y++;
-      }
-
       piece.y--;
       merge();
 
@@ -206,14 +235,24 @@ function update(time = 0) {
   requestAnimationFrame(update);
 }
 
-// Rotate
 function rotate(shape) {
   return shape[0].map((_, i) => shape.map(row => row[i])).reverse();
 }
 
-// Controls
+// keyboard controls
+
+// keyboard controls with subtle input delay/drop
+let inputCooldown = 0;
+
 document.addEventListener("keydown", e => {
   if (!running) return;
+
+  // occasional input drop (feels like missed key)
+  if (Math.random() < 0.06) return;
+
+  // slight random delay batching
+  if (inputCooldown > 0) { inputCooldown--; return; }
+  if (Math.random() < 0.1) inputCooldown = 1;
 
   if (e.key === "ArrowLeft") {
     piece.x--;
@@ -232,8 +271,35 @@ document.addEventListener("keydown", e => {
 
   if (e.key === "ArrowUp") {
     const rotated = rotate(piece.shape);
-    if (!collide(piece.x, piece.y, rotated)) {
-      piece.shape = rotated;
+    // tiny chance rotation "fails" silently
+    if (Math.random() < 0.08) return;
+    if (!collide(piece.x, piece.y, rotated)) piece.shape = rotated;
+  }
+});
+
+// MOBILE CONTROLS
+let touchStartX = 0;
+let touchStartY = 0;
+
+canvas.addEventListener("touchstart", e => {
+  const t = e.touches[0];
+  touchStartX = t.clientX;
+  touchStartY = t.clientY;
+});
+
+canvas.addEventListener("touchend", e => {
+  const t = e.changedTouches[0];
+  let dx = t.clientX - touchStartX;
+  let dy = t.clientY - touchStartY;
+
+  if (Math.abs(dx) > Math.abs(dy)) {
+    if (dx > 20) piece.x++;
+    else if (dx < -20) piece.x--;
+  } else {
+    if (dy > 20) piece.y++;
+    else {
+      const rotated = rotate(piece.shape);
+      if (!collide(piece.x, piece.y, rotated)) piece.shape = rotated;
     }
   }
 });
@@ -243,7 +309,6 @@ function gameOver() {
   alert("Game Over\nScore: " + score + "\nYou almost had it.");
 }
 
-// Start
 playBtn.addEventListener("click", () => {
   board = Array.from({ length: ROWS }, () => Array(COLS).fill(0));
   score = 0;
