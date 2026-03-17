@@ -76,7 +76,9 @@
     box-shadow: 0 6px 14px rgba(0,0,0,0.25);
     transition: transform 0.08s ease, background 0.08s ease;
   }
-
+.ctrl {
+  flex: 0 0 auto; /* prevents shrinking/wrapping */
+}
   .ctrl svg {
     width: 28px;
     height: 28px;
@@ -94,7 +96,14 @@
   }
 
   @media (max-width: 600px) {
-    #controls { display: flex; }
+    #controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  margin-top: 15px;
+  flex-wrap: nowrap; /* prevents stacking */
+} }
   }
 </style>
 </head>
@@ -123,20 +132,11 @@
     <svg viewBox="0 0 24 24"><path d="M12 6V3L8 7l4 4V8c2.76 0 5 2.24 5 5a5 5 0 11-9.9-1h-2.02A7 7 0 1012 6z"/></svg>
   </div>
 </div>
-  <div class="ctrl" id="right">&#9654;</div>
-  <div class="ctrl" id="down">&#9660;</div>
-  <div class="ctrl" id="rotate">&#8635;</div>
-</div>
-  <div class="ctrl" id="right">➡️</div>
-  <div class="ctrl" id="down">⬇️</div>
-  <div class="ctrl" id="rotate">⟳</div>
-</div>
-
 <div id="leaderboard">
   <h2>🏆 Leaderboard</h2>
-  <div>1. Maeve H - 999,999</div>
-  <div>2. Bre G - 850,120</div>
-  <div>3. KDN - 720,300</div>
+  <div>1. Maeve H - 3,930</div>
+  <div>2. Bre G - 2890</div>
+  <div>3. KDN - 730</div>
 </div>
 
 <script>
