@@ -81,6 +81,20 @@ body {
   transform: scale(0.9);
   background: #333;
 }
+
+/* Mobile adjustments */
+@media (max-width: 500px) {
+  #leaderboard {
+    position: static;     /* normal flow */
+    margin: 10px auto 0 auto;
+    max-width: 90%;
+  }
+  
+  .topbar {
+    flex-direction: column;
+    gap: 10px;
+  }
+}
 </style>
 </head>
 
@@ -107,23 +121,10 @@ body {
   <div class="ctrl" id="down"><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></div>
   <div class="ctrl" id="rotate"><svg viewBox="0 0 24 24"><path d="M12 6V3L8 7l4 4V8c2.7 0 5 2.3 5 5a5 5 0 11-10 0H5a7 7 0 1014 0c0-3.9-3.1-7-7-7z"/></svg></div>
 </div>
-/* Mobile adjustments */
-  @media (max-width: 500px) {
-  #leaderboard {
-    position: static;     /* normal flow */
-    margin: 10px auto 0 auto;
-    max-width: 90%;
-  }
   
-  .topbar {
-    flex-direction: column;
-    gap: 10px;
-  }
-}
-
 <script>
 const canvas = document.getElementById("game");
-const ctx = canvas.getContext("2d");
+const ctxƒ = canvas.getContext("2d");
 
 const COLS = 10;
 const ROWS = 20;
