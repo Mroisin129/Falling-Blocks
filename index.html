@@ -146,7 +146,20 @@ function createPiece() {
 
 function draw() {
   ctx.clearRect(0,0,canvas.width,canvas.height);
-
+// grid lines
+ctx.strokeStyle = "rgba(255,255,255,0.05)";
+for (let x = 0; x <= COLS; x++) {
+  ctx.beginPath();
+  ctx.moveTo(x * SIZE, 0);
+  ctx.lineTo(x * SIZE, canvas.height);
+  ctx.stroke();
+}
+for (let y = 0; y <= ROWS; y++) {
+  ctx.beginPath();
+  ctx.moveTo(0, y * SIZE);
+  ctx.lineTo(canvas.width, y * SIZE);
+  ctx.stroke();
+}
   for (let y=0;y<ROWS;y++){
     for (let x=0;x<COLS;x++){
       if (board[y][x]) {
